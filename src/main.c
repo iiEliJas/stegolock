@@ -3,24 +3,24 @@
 #include <string.h>
 #include "stegolock.h"
 
-void print_usage(const char *program_name) {
+void print_usage() {
     printf("Stegolock - AES-256-GCM Password Vault Steganography Tool\n\n");
     printf("Usage:\n");
-    printf("  %s init <image.bmp>\n", program_name);
+    printf("  stegolock init <image.bmp>\n");
     printf("    Initialize a new password vault in a BMP image\n\n");
-    printf("  %s add <image.bmp> <website>\n", program_name);
+    printf("  stegolock add <image.bmp> <website>\n");
     printf("    Add a password entry for a website\n\n");
-    printf("  %s get <image.bmp> <website>\n", program_name);
+    printf("  stegolock get <image.bmp> <website>\n");
     printf("    Retrieve a password entry for a website\n\n");
-    printf("  %s list <image.bmp>\n", program_name);
+    printf("  stegolock list <image.bmp>\n");
     printf("    List all websites in the vault\n\n");
-    printf("  %s del <image.bmp> <website>\n", program_name);
+    printf("  stegolock del <image.bmp> <website>\n");
     printf("    Delete a password entry for a website\n\n");
 }
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        print_usage(argv[0]);
+        print_usage();
         return 1;
     }
     
@@ -62,12 +62,12 @@ int main(int argc, char *argv[]) {
         return stegolock_del(argv[2], argv[3]);
     }
     else if (strcmp(command, "--help") == 0 || strcmp(command, "-h") == 0) {
-        print_usage(argv[0]);
+        print_usage();
         return 0;
     }
     else {
         fprintf(stderr, "Error: Unknown command '%s'\n\n", command);
-        print_usage(argv[0]);
+        print_usage();
         return 1;
     }
 }

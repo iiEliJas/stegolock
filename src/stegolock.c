@@ -27,8 +27,7 @@ static char *get_password(const char *prompt) {
 
 
 
-// Generate output filename from input
-static char *generate_output_filename(const char *input_path) {
+static char *generate_backup_filename(const char *input_path) {
     char *output = (char *)malloc(512);
     if (!output) return NULL;
     
@@ -37,9 +36,9 @@ static char *generate_output_filename(const char *input_path) {
     // Find extension
     char *dot = strrchr(output, '.');
     if (dot) {
-        strcpy(dot, "_locked.bmp");
+        strcpy(dot, "_old.bmp");
     } else {
-        strcat(output, "_locked.bmp");
+        strcat(output, "_old.bmp");
     }
     
     return output;
@@ -60,41 +59,41 @@ int embed_data_stegolock(const char *input_image_path, const char *output_image_
 
 int stegolock_init(const char *image_path) {
     printf("--- Stegolock Initialization ---\n\n");
-    
-    // Check image exists and capacity
+
+    // Check image exists and has capacity
     size_t max_size = get_max_size(image_path);
     if (max_size == 0) {
         fprintf(stderr, "Error: Cannot open image or invalid format\n");
         return -1;
     }
-    
+
     // Get master password
-    char *password1 = get_password("Enter master password: ");
-    char *password2 = get_password("Confirm master password: ");
-    
+    char* password1 = get_password("Enter master password: ");
+    char* password2 = get_password("Confirm master password: ");
+
     if (strcmp(password1, password2) != 0) {
         fprintf(stderr, "Error: Passwords do not match\n");
         free(password1);
         free(password2);
         return -1;
     }
-    
+
     // Create empty vault
-    PasswordVault *vault = create_vault();
+    PasswordVault* vault = create_vault();
     if (!vault) {
         fprintf(stderr, "Error: Cannot create vault\n");
         free(password1);
         free(password2);
         return -1;
     }
-    
+
     // Serialize vault
     size_t vault_size;
-    unsigned char *vault_data = serialize_vault(vault, &vault_size);
-    
+    unsigned char* vault_data = serialize_vault(vault, &vault_size);
+
     // Encrypt vault
     EncryptedData encrypted = encrypt_data(vault_data, vault_size, password1);
-    
+
     if (!encrypted.ciphertext) {
         fprintf(stderr, "Error: Encryption failed\n");
         free(vault_data);
@@ -103,10 +102,10 @@ int stegolock_init(const char *image_path) {
         free_vault(vault);
         return -1;
     }
-    
+
     // Prepare data to embed (salt + iv + tag + ciphertext)
     size_t embed_size = SALT_SIZE + IV_SIZE + TAG_SIZE + encrypted.ciphertext_len;
-    
+
     if (embed_size > max_size) {
         fprintf(stderr, "Error: Image too small for encrypted vault\n");
         free_encrypted_data(&encrypted);
@@ -116,8 +115,8 @@ int stegolock_init(const char *image_path) {
         free_vault(vault);
         return -1;
     }
-    
-    unsigned char *embed_data = (unsigned char *)malloc(embed_size);
+
+    unsigned char* embed_data = (unsigned char*)malloc(embed_size);
     if (!embed_data) {
         fprintf(stderr, "Error: Memory allocation failed\n");
         free_encrypted_data(&encrypted);
@@ -127,7 +126,7 @@ int stegolock_init(const char *image_path) {
         free_vault(vault);
         return -1;
     }
-    
+
     size_t offset = 0;
     memcpy(embed_data + offset, encrypted.salt, SALT_SIZE);
     offset += SALT_SIZE;
@@ -136,14 +135,15 @@ int stegolock_init(const char *image_path) {
     memcpy(embed_data + offset, encrypted.tag, TAG_SIZE);
     offset += TAG_SIZE;
     memcpy(embed_data + offset, encrypted.ciphertext, encrypted.ciphertext_len);
-    
-    // Embed into image
-    char *output_path = generate_output_filename(image_path);
-    
-    if (embed_data_stegolock(image_path, output_path, embed_data, embed_size) != 0) {
-        fprintf(stderr, "Error: Failed to embed data into image\n");
+
+    // Rename original to _old
+    char* backup_path = generate_backup_filename(image_path);
+
+    remove(backup_path);
+    if (rename(image_path, backup_path) != 0) {
+        fprintf(stderr, "Error: Failed to back up original image\n");
         free(embed_data);
-        free(output_path);
+        free(backup_path);
         free_encrypted_data(&encrypted);
         free(vault_data);
         free(password1);
@@ -151,17 +151,31 @@ int stegolock_init(const char *image_path) {
         free_vault(vault);
         return -1;
     }
-    
-    printf("Vault initialized and embedded into %s\n", output_path);
-    
+
+    if (embed_data_stegolock(backup_path, image_path, embed_data, embed_size) != 0) {
+        fprintf(stderr, "Error: Failed to embed data into image\n");
+        rename(backup_path, image_path); // restore original on failure
+        free(embed_data);
+        free(backup_path);
+        free_encrypted_data(&encrypted);
+        free(vault_data);
+        free(password1);
+        free(password2);
+        free_vault(vault);
+        return -1;
+    }
+
+    printf("Vault initialized and embedded into %s\n", image_path);
+    printf("Original backed up as %s\n", backup_path);
+
     free(embed_data);
-    free(output_path);
+    free(backup_path);
     free_encrypted_data(&encrypted);
     free(vault_data);
     free(password1);
     free(password2);
     free_vault(vault);
-    
+
     return 0;
 }
 
@@ -257,22 +271,33 @@ static int save_vault_to_image(const char *image_path, PasswordVault *vault, con
     offset += TAG_SIZE;
     memcpy(embed_data + offset, encrypted.ciphertext, encrypted.ciphertext_len);
     
-    // Embed into image
-    char *output_path = generate_output_filename(image_path);
+    // Rename original to _old
+    char *backup_path = generate_backup_filename(image_path);
     
-    if (embed_data_stegolock(image_path, output_path, embed_data, embed_size) != 0) {
-        fprintf(stderr, "Error: Failed to save vault\n");
+    remove(backup_path);
+    if (rename(image_path, backup_path) != 0) {
+        fprintf(stderr, "Error: Failed to back up original image\n");
         free(embed_data);
-        free(output_path);
+        free(backup_path);
+        free_encrypted_data(&encrypted);
+        free(vault_data);
+        return -1;
+    }
+
+    if (embed_data_stegolock(backup_path, image_path, embed_data, embed_size) != 0) {
+        fprintf(stderr, "Error: Failed to save vault\n");
+        rename(backup_path, image_path); // restore original on failure
+        free(embed_data);
+        free(backup_path);
         free_encrypted_data(&encrypted);
         free(vault_data);
         return -1;
     }
     
-    printf("Vault updated and saved to %s\n", output_path);
+    printf("Vault updated and saved to %s\n", backup_path);
     
     free(embed_data);
-    free(output_path);
+    free(backup_path);
     free_encrypted_data(&encrypted);
     free(vault_data);
     
