@@ -186,9 +186,9 @@ void vault_list_entries(const PasswordVault *vault) {
         return;
     }
     
-    printf("\nStored websites:\n");
+    printf("\n        Stored websites:\n");
     for (uint32_t i = 0; i < vault->entry_count; i++) {
-        printf("  %u. %s\n", i + 1, vault->entries[i].website);
+        printf("            %u. %s\n", i + 1, vault->entries[i].website);
     }
     printf("\n");
 }
