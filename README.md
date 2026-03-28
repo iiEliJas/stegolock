@@ -1,8 +1,7 @@
+# stegolock
 <p align="center">
   <img src="img/stegolock.png" alt="StegoLock Logo" width="300">
 </p>
-
-<h1 align="center">StegoLock</h1>
 
 An AES-256-GCM encrypted password vault hidden inside BMP images.
 
