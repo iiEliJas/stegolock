@@ -14,8 +14,8 @@ An AES-256-GCM encrypted password vault hidden inside BMP images.
 - **Simple CLI** - Commands for vault management
 - **Automatic Backups** - Previous images preserved as `*_old.bmp`
 
-<p align="center">
-  <img src="img/shell.png" alt="PS output" width="400">
+<p>
+  <img src="img/shell.png" alt="PS output" width="500">
 </p>
 
 ## Installation
