@@ -5,7 +5,7 @@
 
 An AES-256-GCM encrypted password vault hidden inside BMP images.
 
-## Features
+# Features
 
 - **AES-256-GCM Encryption** - Encryption with authentication tags
 - **Steganography** - Data hidden in BMP image with lsb
@@ -17,7 +17,7 @@ An AES-256-GCM encrypted password vault hidden inside BMP images.
   <img src="img/shell.png" alt="PS output" width="500">
 </p>
 
-## Installation
+# Installation
 
 ### Requirements
 
@@ -45,7 +45,7 @@ make clean
 
 Removes all build artifacts and temporary files.
 
-## Usage
+# Usage
 
 ### Initialize a new vault
 
@@ -87,20 +87,20 @@ stegolock del image.bmp github.com
 
 Removes a stored credential from the vault.
 
-## How It Works
+# How It Works
 
-### Encryption Flow
+## Encryption Flow
 
 1. **Vault Serialization** - Password entries packed into binary format
 2. **Key Derivation** - Master password → 256-bit key using Argon2 with random salt
 3. **AES-256-GCM** - Encrypts vault with AES-NI acceleration, random IV, and authentication tag
 4. **Data Layout** - `[Salt][IV][Tag][Ciphertext]` embedded in image via steganography
 
-### Steganography
+## Steganography
 
 Data is hidden in the least significant bits (LSB) of BMP pixel values.
 
-### File Backup
+## File Backup
 
 Before modifying an image, the original is renamed to `image_old.bmp`. This preserves your vault in case of corruption or accidental overwrite.
 
@@ -120,6 +120,6 @@ Before modifying an image, the original is renamed to `image_old.bmp`. This pres
 - **Image size** - Must be large enough to hold encrypted vault (~1KB minimum recommended)
 - **Vault capacity** - Limited by available image steganographic capacity
 
-## License
+# License
 
 MIT
