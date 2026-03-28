@@ -1,6 +1,7 @@
 #include "encryption.h"
 #include "aes256gcm.h"
 #include <stdlib.h>
+#include <time.h>
 #include <string.h>
 #include <stdio.h>
 #include <windows.h>

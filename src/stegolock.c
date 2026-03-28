@@ -25,6 +25,8 @@ static char *get_password(const char *prompt) {
     return password;
 }
 
+
+
 // Generate output filename from input
 static char *generate_output_filename(const char *input_path) {
     char *output = (char *)malloc(512);
@@ -42,6 +44,19 @@ static char *generate_output_filename(const char *input_path) {
     
     return output;
 }
+
+
+
+// Wrapper for embed_data 
+int embed_data_stegolock(const char *input_image_path, const char *output_image_path,
+                         const unsigned char *data, size_t data_len) {
+    return embed_data(input_image_path, output_image_path, data, data_len);
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////
+///                     stegolock
+
 
 int stegolock_init(const char *image_path) {
     printf("--- Stegolock Initialization ---\n\n");
@@ -372,8 +387,3 @@ int stegolock_del(const char *image_path, const char *website) {
     return 0;
 }
 
-// Wrapper for embed_data to match expected signature
-int embed_data_stegolock(const char *input_image_path, const char *output_image_path,
-                         const unsigned char *data, size_t data_len) {
-    return embed_data(input_image_path, output_image_path, data, data_len);
-}
