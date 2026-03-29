@@ -318,7 +318,6 @@ size_t get_max_size(const char *image_path) {
     fclose(file);
 
     if (fh.signature != 0x4D42 || ih.bits_per_pixel != 24) {
-        printf("bits per pixel: %u\n", ih.bits_per_pixel);
         return 0;
     }
 

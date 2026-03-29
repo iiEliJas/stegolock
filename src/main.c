@@ -39,7 +39,13 @@ static void enable_ansi(void) {
 
 static void print_usage(void) {
     printf("\n");
-    printf("  " CLR_BOLD CLR_CYAN "S T E G O L O C K" CLR_RESET "\n");
+    printf("  " CLR_CYAN "      _                   _            _     " CLR_RESET "\n");
+    printf("  " CLR_CYAN "  ___| |_ ___  __ _  ___ | | ___   ___| | __ " CLR_RESET "\n");
+    printf("  " CLR_CYAN " / __| __/ _ \\/ _` |/ _ \\| |/ _ \\ / __| |/ / " CLR_RESET "\n");
+    printf("  " CLR_CYAN " \\__ \\ ||  __/ (_| | (_) | | (_) | (__|   <  " CLR_RESET "\n");
+    printf("  " CLR_CYAN " |___/\\__\\___|\\__, |\\___/|_|\\___/ \\___|_|\\_\\ " CLR_RESET "\n");
+    printf("  " CLR_CYAN "              |___/                          " CLR_RESET "\n");
+
     printf("  " CLR_DIM "AES-256-GCM encrypted password vault hidden inside BMP images\n" CLR_RESET);
     printf("\n");
 
