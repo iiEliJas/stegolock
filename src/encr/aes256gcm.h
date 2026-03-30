@@ -9,6 +9,10 @@
 #define AES256GCM_TAG_SIZE 16   // 128-bit authentication tag
  
 
+void secure_zero(void *buf, size_t len);
+
+
+
 // Encrypt plaintext and produce an authentication tag
 //
 // in        - plaintext

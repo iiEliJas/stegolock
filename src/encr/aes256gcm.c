@@ -10,7 +10,7 @@
 
 // Zero memory without compiler optimization
 //
-static void secure_zero(void *buf, size_t len){
+void secure_zero(void *buf, size_t len){
     volatile uint8_t *p = (volatile uint8_t *)buf;
     for (size_t i=0; i < len; i++){
         p[i] = 0;

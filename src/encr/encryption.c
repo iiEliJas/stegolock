@@ -17,6 +17,9 @@
 static int derive_key_argon2id(const char *password, size_t password_len,
                                const unsigned char *salt, size_t salt_len,
                                unsigned char *key, size_t key_len) {
+    if (!password || password_len == 0) {
+        return -1;
+    }
     int result = argon2id_hash_raw(
         ARGON2_TIME_COST,
         ARGON2_MEMORY_SIZE,
@@ -62,11 +65,8 @@ EncryptedData encrypt_data(const unsigned char *plaintext, size_t plaintext_len,
     
     // Generate salt
     if (generate_random_bytes(result.salt, SALT_SIZE) != 0) {
-        // Fallback: use time-based salt
-        srand(time(NULL));
-        for (int i = 0; i < SALT_SIZE; i++) {
-            result.salt[i] = rand() & 0xFF;
-        }
+        fprintf(stderr, "Error: Failed to generate random salt\n");
+        return result;
     }
     
     // Derive key from password
@@ -79,15 +79,15 @@ EncryptedData encrypt_data(const unsigned char *plaintext, size_t plaintext_len,
     
     // Generate IV
     if (generate_random_bytes(result.iv, IV_SIZE) != 0) {
-        srand(time(NULL));
-        for (int i = 0; i < IV_SIZE; i++) {
-            result.iv[i] = rand() & 0xFF;
-        }
+        fprintf(stderr, "Error: Failed to generate random IV\n");
+        secure_zero(key, 32);
+        return result;
     }
     
     result.ciphertext = (unsigned char *)malloc(plaintext_len);
     if (!result.ciphertext) {
         fprintf(stderr, "Error: Memory allocation failed\n");
+        secure_zero(key, 32);
         return result;
     }
     
@@ -99,10 +99,12 @@ EncryptedData encrypt_data(const unsigned char *plaintext, size_t plaintext_len,
         fprintf(stderr, "Error: Encryption failed\n");
         free(result.ciphertext);
         result.ciphertext = NULL;
+        secure_zero(key, 32);
         return result;
     }
     
     result.ciphertext_len = plaintext_len;
+    secure_zero(key, 32);
     return result;
 }
 
@@ -117,6 +119,7 @@ unsigned char *decrypt_data(const EncryptedData *encrypted, const char *master_p
     if (derive_key_argon2id(master_password, strlen(master_password),
                             encrypted->salt, SALT_SIZE, key, 32) != 0) {
         fprintf(stderr, "Error: Key derivation failed\n");
+        secure_zero(key, 32);
         return NULL;
     }
     
@@ -124,6 +127,7 @@ unsigned char *decrypt_data(const EncryptedData *encrypted, const char *master_p
     unsigned char *plaintext = (unsigned char *)malloc(encrypted->ciphertext_len);
     if (!plaintext) {
         fprintf(stderr, "Error: Memory allocation failed\n");
+        secure_zero(key, 32);
         return NULL;
     }
     
@@ -137,10 +141,12 @@ unsigned char *decrypt_data(const EncryptedData *encrypted, const char *master_p
                           tag_copy, plaintext) != 0) {
         fprintf(stderr, "Error: Decryption failed - invalid password or corrupted data\n");
         free(plaintext);
+        secure_zero(key, 32);
         return NULL;
     }
     
     *plaintext_len = encrypted->ciphertext_len;
+    secure_zero(key, 32);
     return plaintext;
 }
 

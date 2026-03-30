@@ -1,6 +1,7 @@
 #include "stegolock.h"
 #include "stego/steganography.h"
 #include "encr/encryption.h"
+#include "encr/aes256gcm.h"
 #include "encr/vault.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -122,6 +123,7 @@ int stegolock_init(const char* image_path) {
     EncryptedData encrypted = encrypt_data(vault_data, vault_size, password1);
     if (!encrypted.ciphertext) {
         fprintf(stderr, MSG_ERR "Encryption failed\n\n");
+        secure_zero(vault_data, vault_size);
         free(vault_data);
         free(password1);
         free(password2);
@@ -133,6 +135,8 @@ int stegolock_init(const char* image_path) {
     if (embed_size > max_size) {
         fprintf(stderr, MSG_ERR "Image too small to hold the encrypted vault\n\n");
         free_encrypted_data(&encrypted);
+        secure_zero(&encrypted, sizeof(encrypted));
+        secure_zero(vault_data, vault_size);
         free(vault_data);
         free(password1);
         free(password2);
@@ -144,6 +148,8 @@ int stegolock_init(const char* image_path) {
     if (!embed_data) {
         fprintf(stderr, MSG_ERR "Memory allocation failed\n\n");
         free_encrypted_data(&encrypted);
+        secure_zero(&encrypted, sizeof(encrypted));
+        secure_zero(vault_data, vault_size);
         free(vault_data);
         free(password1);
         free(password2);
@@ -162,9 +168,12 @@ int stegolock_init(const char* image_path) {
 
     if (rename(image_path, backup_path) != 0) {
         fprintf(stderr, MSG_ERR "Failed to back up original image\n\n");
+        secure_zero(embed_data, embed_size);
+        secure_zero(vault_data, vault_size);
         free(embed_data);
         free(backup_path);
         free_encrypted_data(&encrypted);
+        secure_zero(&encrypted, sizeof(encrypted));
         free(vault_data);
         free(password1);
         free(password2);
@@ -175,9 +184,12 @@ int stegolock_init(const char* image_path) {
     if (embed_data_stegolock(backup_path, image_path, embed_data, embed_size) != 0) {
         fprintf(stderr, MSG_ERR "Failed to embed vault into image\n\n");
         rename(backup_path, image_path);
+        secure_zero(embed_data, embed_size);
+        secure_zero(vault_data, vault_size);
         free(embed_data);
         free(backup_path);
         free_encrypted_data(&encrypted);
+        secure_zero(&encrypted, sizeof(encrypted));
         free(vault_data);
         free(password1);
         free(password2);
@@ -188,9 +200,12 @@ int stegolock_init(const char* image_path) {
     printf(MSG_OK CLR_BOLD "Vault created" CLR_RESET "  ->  " CLR_WHITE "%s" CLR_RESET "\n", image_path);
     printf(MSG_WARN        "Backup saved   ->  " CLR_DIM "%s" CLR_RESET "\n\n", backup_path);
 
+    secure_zero(embed_data, embed_size);
+    secure_zero(vault_data, vault_size);
     free(embed_data);
     free(backup_path);
     free_encrypted_data(&encrypted);
+    secure_zero(&encrypted, sizeof(encrypted));
     free(vault_data);
     free(password1);
     free(password2);
@@ -237,6 +252,7 @@ static PasswordVault* load_vault_from_image(const char* image_path, const char* 
 
     PasswordVault* vault = deserialize_vault(plaintext, plaintext_len);
 
+    secure_zero(plaintext, plaintext_len);
     free(plaintext);
     free(embed_data);
 
@@ -250,6 +266,7 @@ static int save_vault_to_image(const char* image_path, PasswordVault* vault, con
     EncryptedData encrypted = encrypt_data(vault_data, vault_size, password);
     if (!encrypted.ciphertext) {
         fprintf(stderr, MSG_ERR "Encryption failed\n\n");
+        secure_zero(vault_data, vault_size);
         free(vault_data);
         return -1;
     }
@@ -260,6 +277,8 @@ static int save_vault_to_image(const char* image_path, PasswordVault* vault, con
     if (embed_size > max_size) {
         fprintf(stderr, MSG_ERR "Image too small for the updated vault\n\n");
         free_encrypted_data(&encrypted);
+        secure_zero(&encrypted, sizeof(encrypted));
+        secure_zero(vault_data, vault_size);
         free(vault_data);
         return -1;
     }
@@ -268,6 +287,8 @@ static int save_vault_to_image(const char* image_path, PasswordVault* vault, con
     if (!embed_data) {
         fprintf(stderr, MSG_ERR "Memory allocation failed\n\n");
         free_encrypted_data(&encrypted);
+        secure_zero(&encrypted, sizeof(encrypted));
+        secure_zero(vault_data, vault_size);
         free(vault_data);
         return -1;
     }
@@ -283,9 +304,12 @@ static int save_vault_to_image(const char* image_path, PasswordVault* vault, con
 
     if (rename(image_path, backup_path) != 0) {
         fprintf(stderr, MSG_ERR "Failed to back up image\n\n");
+        secure_zero(embed_data, embed_size);
+        secure_zero(vault_data, vault_size);
         free(embed_data);
         free(backup_path);
         free_encrypted_data(&encrypted);
+        secure_zero(&encrypted, sizeof(encrypted));
         free(vault_data);
         return -1;
     }
@@ -293,16 +317,22 @@ static int save_vault_to_image(const char* image_path, PasswordVault* vault, con
     if (embed_data_stegolock(backup_path, image_path, embed_data, embed_size) != 0) {
         fprintf(stderr, MSG_ERR "Failed to save vault\n\n");
         rename(backup_path, image_path);
+        secure_zero(embed_data, embed_size);
+        secure_zero(vault_data, vault_size);
         free(embed_data);
         free(backup_path);
         free_encrypted_data(&encrypted);
+        secure_zero(&encrypted, sizeof(encrypted));
         free(vault_data);
         return -1;
     }
 
+    secure_zero(embed_data, embed_size);
+    secure_zero(vault_data, vault_size);
     free(embed_data);
     free(backup_path);
     free_encrypted_data(&encrypted);
+    secure_zero(&encrypted, sizeof(encrypted));
     free(vault_data);
 
     return 0;
@@ -318,6 +348,7 @@ int stegolock_add(const char* image_path, const char* website) {
 
     PasswordVault* vault = load_vault_from_image(image_path, password);
     if (!vault) {
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
@@ -339,12 +370,14 @@ int stegolock_add(const char* image_path, const char* website) {
     if (vault_add_entry(vault, website, username, vault_password) != 0) {
         fprintf(stderr, MSG_ERR "Failed to add entry\n\n");
         free_vault(vault);
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
 
     if (save_vault_to_image(image_path, vault, password) != 0) {
         free_vault(vault);
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
@@ -352,6 +385,7 @@ int stegolock_add(const char* image_path, const char* website) {
     printf(MSG_OK CLR_BOLD "Entry saved" CLR_RESET "  ->  " CLR_WHITE "%s" CLR_RESET "\n\n", website);
 
     free_vault(vault);
+    secure_zero(password, strlen(password)+1);
     free(password);
     return 0;
 }
@@ -366,6 +400,7 @@ int stegolock_get(const char* image_path, const char* website) {
 
     PasswordVault* vault = load_vault_from_image(image_path, password);
     if (!vault) {
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
@@ -374,6 +409,7 @@ int stegolock_get(const char* image_path, const char* website) {
     if (!entry) {
         fprintf(stderr, MSG_ERR "No entry found for %s\n\n", website);
         free_vault(vault);
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
@@ -386,6 +422,7 @@ int stegolock_get(const char* image_path, const char* website) {
         "Password", entry->password);
 
     free_vault(vault);
+    secure_zero(password, strlen(password)+1);
     free(password);
     return 0;
 }
@@ -400,6 +437,7 @@ int stegolock_list(const char* image_path) {
 
     PasswordVault* vault = load_vault_from_image(image_path, password);
     if (!vault) {
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
@@ -409,6 +447,7 @@ int stegolock_list(const char* image_path) {
     printf("       " CLR_DIM "----------------------------------------" CLR_RESET "\n\n");
 
     free_vault(vault);
+    secure_zero(password, strlen(password)+1);
     free(password);
     return 0;
 }
@@ -423,6 +462,7 @@ int stegolock_del(const char* image_path, const char* website) {
 
     PasswordVault* vault = load_vault_from_image(image_path, password);
     if (!vault) {
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
@@ -430,12 +470,14 @@ int stegolock_del(const char* image_path, const char* website) {
     if (vault_delete_entry(vault, website) != 0) {
         fprintf(stderr, MSG_ERR "No entry found for %s\n\n", website);
         free_vault(vault);
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
 
     if (save_vault_to_image(image_path, vault, password) != 0) {
         free_vault(vault);
+        secure_zero(password, strlen(password)+1);
         free(password);
         return -1;
     }
@@ -443,6 +485,7 @@ int stegolock_del(const char* image_path, const char* website) {
     printf(MSG_OK CLR_BOLD "Entry deleted" CLR_RESET "  ->  " CLR_WHITE "%s" CLR_RESET "\n\n", website);
 
     free_vault(vault);
+    secure_zero(password, strlen(password)+1);
     free(password);
     return 0;
 }

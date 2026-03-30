@@ -1,4 +1,5 @@
 #include "steganography.h"
+#include "../encr/aes256gcm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -166,6 +167,7 @@ int embed_data(const char *input_image_path, const char *output_image_path,
     if (!output_file) {
         fprintf(stderr, "Error: Cannot create output file\n");
         free(pixel_data);
+        secure_zero(embed_buffer, sizeof(size_t) + data_len); 
         free(embed_buffer);
         return -1;
     }
@@ -174,6 +176,7 @@ int embed_data(const char *input_image_path, const char *output_image_path,
         fprintf(stderr, "Error: Cannot write BMP headers\n");
         fclose(output_file);
         free(pixel_data);
+        secure_zero(embed_buffer, sizeof(size_t) + data_len); 
         free(embed_buffer);
         return -1;
     }
@@ -182,6 +185,7 @@ int embed_data(const char *input_image_path, const char *output_image_path,
         fprintf(stderr, "Error: Seek failed\n");
         fclose(output_file);
         free(pixel_data);
+        secure_zero(embed_buffer, sizeof(size_t) + data_len); 
         free(embed_buffer);
         return -1;
     }
@@ -190,12 +194,14 @@ int embed_data(const char *input_image_path, const char *output_image_path,
         fprintf(stderr, "Error: Cannot write pixel data\n");
         fclose(output_file);
         free(pixel_data);
+        secure_zero(embed_buffer, sizeof(size_t) + data_len); 
         free(embed_buffer);
         return -1;
     }
 
     fclose(output_file);
     free(pixel_data);
+    secure_zero(embed_buffer, sizeof(size_t) + data_len); 
     free(embed_buffer);
 
     return 0;
@@ -243,6 +249,7 @@ unsigned char *extract_data(const char *image_path, size_t *data_len) {
 
     if (fseek(file, fh.pixel_offset, SEEK_SET) != 0) {
         fprintf(stderr, "Error: Seek failed\n");
+        secure_zero(pixel_data, pixel_data_size);
         free(pixel_data);
         fclose(file);
         return NULL;
@@ -250,6 +257,7 @@ unsigned char *extract_data(const char *image_path, size_t *data_len) {
 
     if (fread(pixel_data, pixel_data_size, 1, file) != 1) {
         fprintf(stderr, "Error: Cannot read pixel data\n");
+        secure_zero(pixel_data, pixel_data_size);
         free(pixel_data);
         fclose(file);
         return NULL;
@@ -272,6 +280,7 @@ unsigned char *extract_data(const char *image_path, size_t *data_len) {
 
     if (length > pixel_data_size || length == 0) {
         fprintf(stderr, "Error: Invalid embedded data\n");
+        secure_zero(pixel_data, pixel_data_size);
         free(pixel_data);
         return NULL;
     }
@@ -280,6 +289,7 @@ unsigned char *extract_data(const char *image_path, size_t *data_len) {
     unsigned char *extracted = (unsigned char *)malloc(length);
     if (!extracted) {
         fprintf(stderr, "Error: Memory allocation failed\n");
+        secure_zero(pixel_data, pixel_data_size);
         free(pixel_data);
         return NULL;
     }
@@ -294,6 +304,7 @@ unsigned char *extract_data(const char *image_path, size_t *data_len) {
     }
 
     *data_len = length;
+    secure_zero(pixel_data, pixel_data_size);
     free(pixel_data);
     return extracted;
 }

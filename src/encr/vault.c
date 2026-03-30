@@ -128,8 +128,11 @@ int vault_add_entry(PasswordVault *vault, const char *website,
     
     // Add new entry
     strncpy(vault->entries[vault->entry_count].website, website, MAX_WEBSITE_LEN - 1);
+    vault->entries[vault->entry_count].website[MAX_WEBSITE_LEN - 1] = '\0';
     strncpy(vault->entries[vault->entry_count].username, username, MAX_USERNAME_LEN - 1);
+    vault->entries[vault->entry_count].username[MAX_USERNAME_LEN - 1] = '\0';
     strncpy(vault->entries[vault->entry_count].password, password, MAX_PASSWORD_LEN - 1);
+    vault->entries[vault->entry_count].password[MAX_PASSWORD_LEN - 1] = '\0';
     
     vault->entry_count++;
     return 0;
