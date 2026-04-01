@@ -4,26 +4,8 @@
 #include <windows.h>
 #include "stegolock.h"
 
-// ---------------------------------------------------------------------------
-//  Enable ANSI escape codes
-// ---------------------------------------------------------------------------
-
-static void enable_ansi(void) {
-    DWORD mode;
-    HANDLE h;
-
-    h = GetStdHandle(STD_OUTPUT_HANDLE);
-    if (GetConsoleMode(h, &mode))
-        SetConsoleMode(h, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-
-    h = GetStdHandle(STD_ERROR_HANDLE);
-    if (GetConsoleMode(h, &mode))
-        SetConsoleMode(h, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-}
-
-// ---------------------------------------------------------------------------
+///////////////////////////////////////
 //  ANSI colors
-// ---------------------------------------------------------------------------
 
 #define CLR_RESET  "\x1b[0m"
 #define CLR_BOLD   "\x1b[1m"
@@ -33,9 +15,8 @@ static void enable_ansi(void) {
 #define CLR_CYAN   "\x1b[36m"
 #define CLR_WHITE  "\x1b[97m"
 
-// ---------------------------------------------------------------------------
-//  Help
-// ---------------------------------------------------------------------------
+///////////////////////////////////////
+//      HELPER 
 
 static void print_usage(void) {
     printf("\n");
@@ -78,13 +59,10 @@ static void print_usage(void) {
     printf("\n");
 }
 
-// ---------------------------------------------------------------------------
-//  main
-// ---------------------------------------------------------------------------
+///////////////////////////////////////
+//      MAIN 
 
 int main(int argc, char* argv[]) {
-    enable_ansi();
-
     if (argc < 2) {
         print_usage();
         return 1;
